@@ -15,10 +15,17 @@
 */
 package com.example.google.playservices.placepicker;
 
+import android.Manifest;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.view.Menu;
+import android.view.View;
+import android.widget.Toast;
 
 import com.example.android.common.activities.SampleActivityBase;
 import com.example.android.common.logger.Log;
@@ -32,6 +39,7 @@ import com.example.google.playservices.placepicker.cardstream.StreamRetentionFra
 public class MainActivity extends SampleActivityBase implements CardStream {
     public static final String TAG = "MainActivity";
     public static final String FRAGTAG = "PlacePickerFragment";
+    private static final int REQUEST_PERMISSIONS_REQUEST_CODE = 34;
 
     private CardStreamFragment mCardStreamFragment;
 
@@ -90,5 +98,65 @@ public class MainActivity extends SampleActivityBase implements CardStream {
         super.onSaveInstanceState(outState);
         CardStreamState state = getCardStream().dumpState();
         mRetentionFragment.storeCardStream(state);
+    }
+
+    @Override
+    protected  void onResume() {
+        super.onResume();
+        if (!checkPermissions())
+            requestPermissions();
+        else
+            //getLastLocation();
+            Toast.makeText(this, "ALL ITS OK", Toast.LENGTH_SHORT).show();
+    }
+
+    /**
+     * Return the current state of the permissions needed.
+     */
+    private boolean checkPermissions() {
+        int permissionState = ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        return permissionState == PackageManager.PERMISSION_GRANTED;
+    }
+
+    private void requestPermissions() {
+        boolean shouldProvideRationale =
+                ActivityCompat.shouldShowRequestPermissionRationale(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION);
+
+       if (shouldProvideRationale) {
+            android.util.Log.i(TAG, "Displaying permission rationale to provide additional context.");
+            showSnackbar(R.string.permission_rationale,
+                    android.R.string.ok, new View.OnClickListener() {
+                        @Override
+                        public void onClick(View view) {
+                            // Request permission
+                            ActivityCompat.requestPermissions(MainActivity.this,
+                                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                                    REQUEST_PERMISSIONS_REQUEST_CODE);
+                        }
+                    });
+        } else {
+            android.util.Log.i(TAG, "Requesting permission");
+            ActivityCompat.requestPermissions(MainActivity.this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    REQUEST_PERMISSIONS_REQUEST_CODE);
+        }
+    }
+
+    /**
+     * Shows a {@link Snackbar}.
+     *
+     * @param mainTextStringId The id for the string resource for the Snackbar text.
+     * @param actionStringId   The text of the action item.
+     * @param listener         The listener associated with the Snackbar action.
+     */
+    private void showSnackbar(final int mainTextStringId, final int actionStringId,
+                              View.OnClickListener listener) {
+        Snackbar.make(
+                findViewById(android.R.id.content),
+                getString(mainTextStringId),
+                Snackbar.LENGTH_INDEFINITE)
+                .setAction(getString(actionStringId), listener).show();
     }
 }
